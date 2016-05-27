@@ -25,13 +25,17 @@ async function getTrainByHash(hash) {
       TableName : 'cta-trains',
       KeyConditionExpression: 'prdt = :prdt and rn = :rn',
       ExpressionAttributeValues: {
-          ':prdt': hash.prdt,
-          ':rn': hash.rn
+          ':prdt': hash[0].prdt,
+          ':rn': hash[0].rn
       }
   };
 
-  let query = await dynamo.queryAsync(params)
-  return query.Items
+  try {
+    let query = await dynamo.queryAsync(params)
+    return query.Items
+  } catch (error) {
+    console.log(error)
+  }
 };
 
 async function trainHashAtTimestamp(timestamp) {
@@ -53,13 +57,17 @@ async function trainHashAtTimestamp(timestamp) {
 
 };
 
-main() {
-  let trainsHash = await trainHashAtTimestamp(1460808468);
-  console.log(trainsHash);
-
-  let trains = await getTrainByHash(trainsHash);
-  console.log(trains);
+async function getTrainsByTimestamp() {
+  try{ 
+    let trainsHash = await trainHashAtTimestamp(1460808468);
+    let trains = await getTrainByHash(trainsHash);
+    return trains
+  } catch (error) {
+    console.log(error)
+  }
 }
+
+main();
 
 /**
  * Configure logging

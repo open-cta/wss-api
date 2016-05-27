@@ -10,36 +10,50 @@ require('dotenv').config({path: '.secrets'})
  * Setting up Modules
  */
 var _ = require('lodash'),
+    promise = require('bluebird'),
     winston  = require('winston'),
+    AWS = require('aws-sdk'),
     WebSocketServer = require('ws').Server;
 
+    AWS.config.update({region: 'us-east-1'});
 
-async function getTrains(){
-  var AWS = require('aws-sdk');
-  AWS.config.update({region: 'us-east-1'});
-  var docClient = new AWS.DynamoDB.DocumentClient();
+    var ddb = new AWS.DynamoDB.DocumentClient(),
+        dynamo =  promise.promisifyAll(ddb);
 
+// async function getTrainByHash(hash) {
+//   var params = {
+//       TableName : 'cta-trains',
+//       KeyConditionExpression: 'prdt = :prdt and rn = :rn',
+//       ExpressionAttributeValues: {
+//           ':prdt': hash.prdt,
+//           ':rn': hash.rn
+//       }
+//   };
+
+//   let query = await dynamo.queryAsync(params)
+//   return query.Items
+// };
+
+async function trainHashAtTimestamp(timestamp) {
   var params = {
       TableName : 'cta-trains',
       IndexName: 'prdt-index',
       KeyConditionExpression: 'prdt = :prdtime',
       ExpressionAttributeValues: {
-          ':prdtime': 1460808468
+          ':prdtime': timestamp
       }
   };
 
-  docClient.query(params, function(err, data) {
-      if (err) {
-          console.error('Unable to query. Error:', JSON.stringify(err, null, 2));
-      } else {
-          console.log('Query succeeded.');
-          console.log(data)
-      }
-  });
+  try {
+     let query = await dynamo.queryAsync(params)
+     console.log(query)
+  } catch (error) {
+    console.log(error)
+  }
 
 };
 
-getTrains();
+trainHashAtTimestamp(1460808468);
 
 /**
  * Configure logging

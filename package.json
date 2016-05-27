@@ -27,6 +27,7 @@
   ],
   "dependencies": {
     "aws-sdk": "^2.3.16",
+    "bluebird": "^3.4.0",
     "bufferutil": "^1.2.1",
     "dotenv": "^2.0.0",
     "dynasty": "^0.2.4",

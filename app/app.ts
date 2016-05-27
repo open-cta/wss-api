@@ -15,24 +15,24 @@ var _ = require('lodash'),
     AWS = require('aws-sdk'),
     WebSocketServer = require('ws').Server;
 
-    AWS.config.update({region: 'us-east-1'});
+AWS.config.update({region: 'us-east-1'});
 
-    var ddb = new AWS.DynamoDB.DocumentClient(),
-        dynamo =  promise.promisifyAll(ddb);
+var ddb = new AWS.DynamoDB.DocumentClient(),
+    dynamo =  promise.promisifyAll(ddb);
 
-// async function getTrainByHash(hash) {
-//   var params = {
-//       TableName : 'cta-trains',
-//       KeyConditionExpression: 'prdt = :prdt and rn = :rn',
-//       ExpressionAttributeValues: {
-//           ':prdt': hash.prdt,
-//           ':rn': hash.rn
-//       }
-//   };
+async function getTrainByHash(hash) {
+  var params = {
+      TableName : 'cta-trains',
+      KeyConditionExpression: 'prdt = :prdt and rn = :rn',
+      ExpressionAttributeValues: {
+          ':prdt': hash.prdt,
+          ':rn': hash.rn
+      }
+  };
 
-//   let query = await dynamo.queryAsync(params)
-//   return query.Items
-// };
+  let query = await dynamo.queryAsync(params)
+  return query.Items
+};
 
 async function trainHashAtTimestamp(timestamp) {
   var params = {
@@ -46,14 +46,20 @@ async function trainHashAtTimestamp(timestamp) {
 
   try {
      let query = await dynamo.queryAsync(params)
-     console.log(query)
+     return query.Items
   } catch (error) {
     console.log(error)
   }
 
 };
 
-trainHashAtTimestamp(1460808468);
+main() {
+  let trainsHash = await trainHashAtTimestamp(1460808468);
+  console.log(trainsHash);
+
+  let trains = await getTrainByHash(trainsHash);
+  console.log(trains);
+}
 
 /**
  * Configure logging

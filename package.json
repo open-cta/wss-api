@@ -1,12 +1,12 @@
 {
-  "name": "project-name",
-  "version": "0.0.0",
+  "name": "wss-cta",
+  "version": "0.0.1",
   "description": "An example module to illustrate the usage of a package.json",
   "author": "Brett Neese",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "tsc app/app.ts; node ./dist/app.js",
+    "start": "node ./dist/app.js",
     "postinstall": "typings install",
     "tsc": "tsc",
     "tsc:w": "tsc -w",

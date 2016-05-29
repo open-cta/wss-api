@@ -13,7 +13,7 @@ var promise = require('bluebird'),
     winston  = require('winston'),
     AWS = require('aws-sdk'),
     WebSocketServer = require('ws').Server,
-    wss = new WebSocketServer({ port: 8081 }),
+    wss = new WebSocketServer({ port: 4200 }),
     clientConnected = false;
 
 /**
@@ -24,7 +24,6 @@ var logger = new (winston.Logger)({
     new (winston.transports.Console)({ level: 'debug' }),
   ]
 })
-
 
 /**
  * Set up AWS
@@ -107,10 +106,11 @@ wss.on('connection', async function connection(ws) {
   ws.on('message', function incoming(message) {
       iterate(ws, Number(message)) // just assume that the message is a timestamp for now
    });
-});
+}); 
 
 wss.on('close', function close() {
   clientConnected = false;
   console.log('disconnected');
 });
+
 

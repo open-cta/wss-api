@@ -9,7 +9,8 @@ require('dotenv').config({path: '.secrets'})
 /**
  * Setting up modules
  */
-var promise = require('bluebird'),
+var _ = require('underscore'),
+    promise = require('bluebird'),
     winston  = require('winston'),
     AWS = require('aws-sdk'),
     WebSocketServer = require('ws').Server,
@@ -35,6 +36,8 @@ var ddb = new AWS.DynamoDB.DocumentClient(),
 /**
  * Functions for retrieving data from DB
  */
+
+// Get a train by it's hash (partition and sort key)
 async function getTrainByHash(hash) {
   var params = {
       TableName : 'cta-trains',
@@ -52,6 +55,7 @@ async function getTrainByHash(hash) {
   }
 };
 
+// get a hash (patition/sort key) by searching the index
 async function trainHashAtTimestamp(timestamp) {
   var params = {
       TableName : 'cta-trains',
@@ -70,6 +74,7 @@ async function trainHashAtTimestamp(timestamp) {
   }
 };
 
+// essentially just run both of the two above functions together
 async function getTrainsByTimestamp(timestamp) {
   try {
     let trainsHash = await trainHashAtTimestamp(timestamp);
@@ -82,13 +87,29 @@ async function getTrainsByTimestamp(timestamp) {
   }
 }
 
+// get some random trains and send them to websockets
+async function getRandomTrains(ws) {
+    let min = 1460592000
+    let max = Math.floor(Date.now()/1000)
+    let ts = _.random(min, max)
+    let hash = await trainHashAtTimestamp(ts)
+    if (_.isEmpty(hash)) {
+      getRandomTrains(ws);
+    } else {
+      let trains = await getTrainByHash(hash)
+      ws.send(JSON.stringify(trains[0]))
+      let timestamp = ts++
+      iterate(ws, timestamp)
+    }
+}
+
+// start with a timestamp and just keep working into THE FUTURE
 async function iterate(ws, timestamp) {
   try {
     for (var ts = timestamp; clientConnected; ts++) {
       let trains = await getTrainsByTimestamp(ts)
       if (typeof trains !== 'undefined') {
         ws.send(JSON.stringify(trains[0]))
-        logger.debug(trains)
       }
     }
   } catch (error) {
@@ -102,15 +123,17 @@ async function iterate(ws, timestamp) {
 
 wss.on('connection', async function connection(ws) {
   clientConnected = true
-  console.log('connected!')
+  // by default just get some random trains
+  getRandomTrains(ws)
+
+  // if we get a message, go out find it and start iterating over that timestamp. 
+  // probably need to do better existence checking here
   ws.on('message', function incoming(message) {
       iterate(ws, Number(message)) // just assume that the message is a timestamp for now
    });
-}); 
+});
 
 wss.on('close', function close() {
   clientConnected = false;
   console.log('disconnected');
 });
-
-

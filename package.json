@@ -1,6 +1,6 @@
 {
   "name": "wss-cta",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An example module to illustrate the usage of a package.json",
   "author": "Brett Neese",
   "license": "MIT",
@@ -32,6 +32,7 @@
     "dotenv": "^2.0.0",
     "dynasty": "^0.2.4",
     "lodash": "^4.11.2",
+    "underscore": "^1.8.3",
     "utf-8-validate": "^1.2.1",
     "winston": "^2.2.0",
     "ws": "^1.1.0"

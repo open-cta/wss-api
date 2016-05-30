@@ -14,8 +14,8 @@ var _ = require('underscore'),
     winston  = require('winston'),
     AWS = require('aws-sdk'),
     WebSocketServer = require('ws').Server,
-    wss = new WebSocketServer({ port: 4200 }),
-    clientConnected = false;
+    wss = new WebSocketServer({ port: 4200 }), // ayy lmao
+    iteratating = false;
 
 /**
  * Configure logging
@@ -40,11 +40,10 @@ var ddb = new AWS.DynamoDB.DocumentClient(),
 // get all items in the run number given a hash
 // if following is true, get only future predictions from the timestamp
 async function getAllOfRunNumber(hash, following) {
-
   // calculate a range of values. run numbers are per day,
   // so this gets us a list of all other predictions given the run number and a timestamp
 
-  let unixTime = hash[0].prdt * 1000
+  let unixTime = Number(hash.prdt) * 1000
 
   let min = new Date(unixTime)
   min.setHours(0, 0, 0)
@@ -64,13 +63,12 @@ async function getAllOfRunNumber(hash, following) {
       ExpressionAttributeValues: {
           ':min': min.getTime() / 1000,
           ':max': max.getTime() / 1000,
-          ':rn': 817
+          ':rn': Number(hash.rn)
       }
   };
 
   try {
     let query = await dynamo.queryAsync(params)
-    console.log(query.Items)
     return query.Items
   } catch (error) {
     logger.warning(error)
@@ -130,7 +128,7 @@ async function getTrainsByTimestamp(timestamp) {
 // get some random trains and send them to websockets
 async function getRandomPredictions(ws) {
     let min = 1460592000
-    let max = Math.floor(Date.now()/1000)
+    let max = Math.floor(Date.now() / 1000)
     let ts = _.random(min, max)
     let hash = await trainHashAtTimestamp(ts)
     if (_.isEmpty(hash)) {
@@ -139,6 +137,7 @@ async function getRandomPredictions(ws) {
       let trains = await getTrainByHash(hash)
       ws.send(JSON.stringify(trains[0]))
       let timestamp = ts++
+      iteratating = true
       iterate(ws, timestamp)
     }
 }
@@ -147,7 +146,7 @@ async function getRandomPredictions(ws) {
 // start with a timestamp and just keep working into THE FUTURE
 async function iterate(ws, timestamp) {
   try {
-    for (var ts = timestamp; clientConnected; ts++) {
+    for (var ts = timestamp; iteratating; ts++) {
       let trains = await getTrainsByTimestamp(ts)
       if (typeof trains !== 'undefined') {
         ws.send(JSON.stringify(trains[0]))
@@ -172,27 +171,32 @@ function toEvent (message) {
 }
 
 wss.on('connection', function(ws) {
-  clientConnected = true
 
   ws.on('message', toEvent);
-
-  ws.on('follow', function (data) {
-    getAllOfRunNumber(data, true);
-  });
 
   // if we get an iterate message, go out find it and start iterating over that timestamp. 
   // probably need to do better existence checking here
 
-  ws.on('iterate', function (data) {
-     iterate(ws, Number(data.timestamp))
+  ws.on('follow', async function (data) {
+     iteratating = false
+     let r = await getAllOfRunNumber(data, ws)
+     ws.send(r)
   });
 
-  // by default just get some random predictions
-  getRandomPredictions(ws)
+  ws.on('iterate', function (data) {
+     iteratating = true
+     iterate(ws, Number(data.timestamp))
+     // this sends data down, but because of the for loop, we're not doing ws.send here
+  });
+
+  ws.on('random', function (data) {
+    iteratating = false
+    getRandomPredictions(ws)
+  });
 
 });
 
 wss.on('close', function close() {
-  clientConnected = false;
+  iteratating = false;
   console.log('disconnected');
 });

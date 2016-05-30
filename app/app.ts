@@ -127,7 +127,7 @@ async function getTrainsByTimestamp(timestamp) {
   }
 }
 
-// get some random trains and send them to websockets
+// get a random train prediction and send them to websockets
 async function getRandomPredictions(ws) {
     let min = 1460592000
     let max = Math.floor(Date.now() / 1000)
@@ -176,21 +176,11 @@ wss.on('connection', function(ws) {
 
   ws.on('message', toEvent);
 
-  // if we get an iterate message, go out find it and start iterating over that timestamp. 
-  // probably need to do better existence checking here
-
   ws.on('follow', async function (data) {
      iterating = false
      let arr = await getAllOfRunNumber(data, true)
-//     let arr = _.sortBy(_arr, function(obj) { return obj.prdt; })
-
-    //  var previousData = arr[0]
-    //  ws.send(JSON.stringify(previousData))
-    //  var newData = arr[1]
-    //  var d = newData.prdt - previousData.prdt
-    //  await delay(d * 1000)
-    //  ws.send(JSON.stringify(previousData))
      let dly = 0;
+
      _.each(arr, async function(newData, i, arr) {
           if (i > 0) {
             let previousIndex = i - 1
@@ -199,12 +189,8 @@ wss.on('connection', function(ws) {
             dly = dly + d
             await delay(dly)
           }
-          ws.send(JSON.stringify(newData))
 
-          // previousData = newData
-          // await delay(dly)
-          // console.log(d)
-          // ws.send(JSON.stringify(newData))
+          ws.send(JSON.stringify(newData))
      })
   });
 

@@ -186,7 +186,7 @@ wss.on('connection', function(ws) {
           if (i > 0) {
             let previousIndex = i - 1
             let previousData = arr[previousIndex]
-            let d = (newData.prdt - previousData.prdt)*1000
+            let d = (newData.prdt - previousData.prdt) * 1000
             dly = dly + d
             await delay(dly)
           }

@@ -179,8 +179,8 @@ wss.on('connection', function(ws) {
 
   ws.on('follow', async function (data) {
      iteratating = false
-     let r = await getAllOfRunNumber(data, ws)
-     ws.send(r)
+     let r = await getAllOfRunNumber(data, true)
+     ws.send(JSON.stringify(r))
   });
 
   ws.on('iterate', function (data) {

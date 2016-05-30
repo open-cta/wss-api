@@ -24,7 +24,7 @@ var iterating = false;
  */
 var logger = new (winston.Logger)({
   transports: [
-    new (winston.transports.Console)({ level: 'debug' }),
+    new (winston.transports.Console)({ level: 'debug' })
   ]
 })
 
@@ -87,13 +87,14 @@ async function getTrainByHash(hash) {
           ':rn': hash[0].rn
       }
   };
+
   try {
     let query = await dynamo.queryAsync(params)
     return query.Items
   } catch (error) {
     logger.warning(error)
   }
-};
+}
 
 // get a hash (patition/sort key) by searching the index
 async function trainHashAtTimestamp(timestamp) {
@@ -112,7 +113,7 @@ async function trainHashAtTimestamp(timestamp) {
   } catch (error) {
     logger.warning(error)
   }
-};
+}
 
 // essentially just run both of the two above functions together
 async function getTrainsByTimestamp(timestamp) {
@@ -165,10 +166,10 @@ async function iterate(ws, timestamp) {
 
 function toEvent (message) {
   try {
-    var event = JSON.parse(message);
-    this.emit(event.type, event.payload);
+    var event = JSON.parse(message)
+    this.emit(event.type, event.payload)
   } catch (err) {
-    console.log('not an event' , err);
+    console.log('not an event' , err)
   }
 }
 
@@ -179,7 +180,7 @@ wss.on('connection', function(ws) {
   ws.on('follow', async function (data) {
      iterating = false
      let arr = await getAllOfRunNumber(data, true)
-     let dly = 0;
+     let dly = 0
 
      _.each(arr, async function(newData, i, arr) {
           if (i > 0) {
@@ -189,9 +190,8 @@ wss.on('connection', function(ws) {
             dly = dly + d
             await delay(dly)
           }
-
           ws.send(JSON.stringify(newData))
-     })
+     });
   });
 
   ws.on('iterate', function (data) {
@@ -208,6 +208,6 @@ wss.on('connection', function(ws) {
 });
 
 wss.on('close', function close() {
-  iterating = false;
-  console.log('disconnected');
+  iterating = false
+  console.log('disconnected')
 });

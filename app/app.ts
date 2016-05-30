@@ -9,13 +9,15 @@ require('dotenv').config({path: '.secrets'})
 /**
  * Setting up modules
  */
-var _ = require('underscore'),
-    promise = require('bluebird'),
-    winston  = require('winston'),
-    AWS = require('aws-sdk'),
-    WebSocketServer = require('ws').Server,
-    wss = new WebSocketServer({ port: 4200 }), // ayy lmao
-    iteratating = false;
+const _ = require('underscore'),
+     promise = require('bluebird'),
+     winston  = require('winston'),
+     delay = require('delay'),
+     AWS = require('aws-sdk'),
+     WebSocketServer = require('ws').Server,
+     wss = new WebSocketServer({ port: 4200 }); // ayy lmao 
+
+var iterating = false;
 
 /**
  * Configure logging
@@ -137,7 +139,7 @@ async function getRandomPredictions(ws) {
       let trains = await getTrainByHash(hash)
       ws.send(JSON.stringify(trains[0]))
       let timestamp = ts++
-      iteratating = true
+      iterating = true
       iterate(ws, timestamp)
     }
 }
@@ -146,7 +148,7 @@ async function getRandomPredictions(ws) {
 // start with a timestamp and just keep working into THE FUTURE
 async function iterate(ws, timestamp) {
   try {
-    for (var ts = timestamp; iteratating; ts++) {
+    for (var ts = timestamp; iterating; ts++) {
       let trains = await getTrainsByTimestamp(ts)
       if (typeof trains !== 'undefined') {
         ws.send(JSON.stringify(trains[0]))
@@ -178,25 +180,48 @@ wss.on('connection', function(ws) {
   // probably need to do better existence checking here
 
   ws.on('follow', async function (data) {
-     iteratating = false
-     let r = await getAllOfRunNumber(data, true)
-     ws.send(JSON.stringify(r))
+     iterating = false
+     let arr = await getAllOfRunNumber(data, true)
+//     let arr = _.sortBy(_arr, function(obj) { return obj.prdt; })
+
+    //  var previousData = arr[0]
+    //  ws.send(JSON.stringify(previousData))
+    //  var newData = arr[1]
+    //  var d = newData.prdt - previousData.prdt
+    //  await delay(d * 1000)
+    //  ws.send(JSON.stringify(previousData))
+     let dly = 0;
+     _.each(arr, async function(newData, i, arr) {
+          if (i > 0) {
+            let previousIndex = i - 1
+            let previousData = arr[previousIndex]
+            let d = (newData.prdt - previousData.prdt)*1000
+            dly = dly + d
+            await delay(dly)
+          }
+          ws.send(JSON.stringify(newData))
+
+          // previousData = newData
+          // await delay(dly)
+          // console.log(d)
+          // ws.send(JSON.stringify(newData))
+     })
   });
 
   ws.on('iterate', function (data) {
-     iteratating = true
+     iterating = true
      iterate(ws, Number(data.timestamp))
      // this sends data down, but because of the for loop, we're not doing ws.send here
   });
 
   ws.on('random', function (data) {
-    iteratating = false
+    iterating = false
     getRandomPredictions(ws)
   });
 
 });
 
 wss.on('close', function close() {
-  iteratating = false;
+  iterating = false;
   console.log('disconnected');
 });

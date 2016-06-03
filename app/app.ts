@@ -4,7 +4,7 @@
 /**
  * Configure environmental variables
  */
-require('dotenv').config({path: '.secrets'})
+require('dotenv').config({path: '.secrets', silent: true})
 
 /**
  * Setting up modules

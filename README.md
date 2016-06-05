@@ -1,8 +1,3 @@
-# New project by Brett Neese
+# WebSockets API for Historical CTA Train Data
 
 http://brett.neese.rocks
-
-
-1. mkdir .logs; mkdir .dist; touch .secrets 
-2. Put stuff in app/app.ts
-3. npm run
